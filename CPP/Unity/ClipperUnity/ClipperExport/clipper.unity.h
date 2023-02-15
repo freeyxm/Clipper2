@@ -7,7 +7,7 @@
 * License   :                                                                  *
 *******************************************************************************/
 #pragma once
-#include "clipper.h"
+#include "clipper2/clipper.h"
 #define DllExport extern "C" __declspec(dllexport)
 
 namespace Clipper2Lib::Unity {

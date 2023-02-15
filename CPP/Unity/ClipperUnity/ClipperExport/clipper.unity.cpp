@@ -6,7 +6,7 @@
 * Purpose   :  This module exports the Clipper2 Library (ie DLL/so)            *
 * License   :                                                                  *
 *******************************************************************************/
-#include "clipper2/clipper.unity.h"
+#include "clipper.unity.h"
 
 namespace Clipper2Lib::Unity {
 
