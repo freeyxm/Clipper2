@@ -1,4 +1,4 @@
 *.vcxproj.filters
 *.vcxproj.user
-Debug/
-Release/
+bin/
+obj/
