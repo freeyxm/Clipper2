@@ -62,11 +62,11 @@ namespace Clipper2Lib.Native
 
         private static Paths64Data mSubjects64 = new Paths64Data();
         private static Paths64Data mClips64 = new Paths64Data();
-        private static Path64Pool mPath64Pool = new Path64Pool();
+        private static PathPool<Path64, Clipper2Lib.Point64> mPath64Pool = new PathPool<Path64, Clipper2Lib.Point64>();
 
         private static PathsDData mSubjectsD = new PathsDData();
         private static PathsDData mClipsD = new PathsDData();
-        private static PathDPool mPathDPool = new PathDPool();
+        private static PathPool<PathD, Clipper2Lib.PointD> mPathDPool = new PathPool<PathD, Clipper2Lib.PointD>();
 
         #region DllImport CPaths64
         [DllImport(DLL_NAME)]
@@ -414,29 +414,30 @@ namespace Clipper2Lib.Native
         #endregion
     }
 
-    public class Path64Pool
+    public class PathPool<T, T2> where T : List<T2>, new()
     {
-        private Stack<Path64> mStack = new Stack<Path64>();
+        private Stack<T> mStack = new Stack<T>();
+
         public int Count => mStack.Count;
 
-        public Path64 Get(int capacity = 0)
+        public PathPool()
         {
-            if (mStack.Count > 0)
-            {
-                var result = mStack.Pop();
-                if (result.Capacity < capacity)
-                {
-                    result.Capacity = capacity;
-                }
-                return result;
-            }
-            else
-            {
-                return new Path64(capacity);
-            }
         }
 
-        public void Recycle(Path64 obj)
+        public T Get(int capacity = 0)
+        {
+            T result;
+            if (mStack.Count > 0)
+                result = mStack.Pop();
+            else
+                result = new T();
+
+            if (result.Capacity < capacity)
+                result.Capacity = capacity;
+            return result;
+        }
+
+        public void Recycle(T obj)
         {
 #if UNITY_EDITOR && CHECK_RECYCLE
 			if (mStack.Contains(obj))
@@ -458,55 +459,7 @@ namespace Clipper2Lib.Native
 
         public void Release()
         {
-            mStack = new Stack<Path64>();
-        }
-    }
-
-    public class PathDPool
-    {
-        private Stack<PathD> mStack = new Stack<PathD>();
-        public int Count => mStack.Count;
-
-        public PathD Get(int capacity = 0)
-        {
-            if (mStack.Count > 0)
-            {
-                var result = mStack.Pop();
-                if (result.Capacity < capacity)
-                {
-                    result.Capacity = capacity;
-                }
-                return result;
-            }
-            else
-            {
-                return new PathD(capacity);
-            }
-        }
-
-        public void Recycle(PathD obj)
-        {
-#if UNITY_EDITOR && CHECK_RECYCLE
-			if (mStack.Contains(obj))
-			{
-				UnityEngine.Debug.LogError($"{this} Recycle repeat!");
-			}
-			else
-#endif
-            {
-                obj.Clear();
-                mStack.Push(obj);
-            }
-        }
-
-        public void Clear()
-        {
-            mStack.Clear();
-        }
-
-        public void Release()
-        {
-            mStack = new Stack<PathD>();
+            mStack = new Stack<T>();
         }
     }
 }

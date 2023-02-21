@@ -441,8 +441,8 @@ namespace Clipper2Lib
 
   public class Path64 : List<Point64> 
   {
-    private Path64() : base() { }
-    public Path64(int capacity = 0) : base(capacity) { }
+    public Path64() : base(0) { }
+    public Path64(int capacity) : base(capacity) { }
     public Path64(IEnumerable<Point64> path) : base(path) { }
     public override string ToString()
     {
@@ -454,8 +454,8 @@ namespace Clipper2Lib
   }
   public class Paths64 : List<Path64>
   {
-    private Paths64() : base() { }
-    public Paths64(int capacity = 0) : base(capacity) { }
+    public Paths64() : base(0) { }
+    public Paths64(int capacity) : base(capacity) { }
     public Paths64(IEnumerable<Path64> paths) : base(paths) { }
     public override string ToString()
     {
@@ -468,8 +468,8 @@ namespace Clipper2Lib
 
   public class PathD : List<PointD>
   {
-    private PathD() : base() { }
-    public PathD(int capacity = 0) : base(capacity) { }
+    public PathD() : base(0) { }
+    public PathD(int capacity) : base(capacity) { }
     public PathD(IEnumerable<PointD> path) : base(path) { }
     public override string ToString()
     {
@@ -482,8 +482,8 @@ namespace Clipper2Lib
 
   public class PathsD : List<PathD>
   {
-    private PathsD() : base() { }
-    public PathsD(int capacity = 0) : base(capacity) { }
+    public PathsD() : base(0) { }
+    public PathsD(int capacity) : base(capacity) { }
     public PathsD(IEnumerable<PathD> paths) : base(paths) { }
     public override string ToString()
     {
@@ -529,7 +529,18 @@ namespace Clipper2Lib
     OnEdge
   };
 
-  public static class InternalClipper
+  // Vertex: a pre-clipping data structure. It is used to separate polygons
+  // into ascending and descending 'bounds' (or sides) that start at local
+  // minima and ascend to a local maxima, before descending again.
+  [Flags]
+  public enum PointInPolygonResult
+  {
+    IsOn = 0,
+    IsInside = 1,
+    IsOutside = 2
+  };
+
+    public static class InternalClipper
   {
     internal const long MaxInt64 = 9223372036854775807;
     internal const long MaxCoord = MaxInt64 / 4;
@@ -665,6 +676,69 @@ namespace Clipper2Lib
       if (q < 0) q = 0; else if (q > 1) q = 1;
       return new Point64(
         seg1.X + Math.Round(q * dx), seg1.Y + Math.Round(q* dy));
+    }
+
+    public static PointInPolygonResult PointInPolygon(Point64 pt, Path64 polygon)
+    {
+      int len = polygon.Count, i = len - 1;
+
+      if (len < 3) return PointInPolygonResult.IsOutside;
+
+      while (i >= 0 && polygon[i].Y == pt.Y) --i;
+      if (i < 0) return PointInPolygonResult.IsOutside;
+
+      int val = 0;
+      bool isAbove = polygon[i].Y < pt.Y;
+      i = 0;
+
+      while (i < len)
+      {
+        if (isAbove)
+        {
+          while (i < len && polygon[i].Y < pt.Y) i++;
+          if (i == len) break;
+        }
+        else
+        {
+          while (i < len && polygon[i].Y > pt.Y) i++;
+          if (i == len) break;
+        }
+
+        Point64 prev;
+
+        Point64 curr = polygon[i];
+        if (i > 0) prev = polygon[i - 1];
+        else prev = polygon[len - 1];
+
+        if (curr.Y == pt.Y)
+        {
+          if (curr.X == pt.X || (curr.Y == prev.Y &&
+            ((pt.X < prev.X) != (pt.X < curr.X))))
+            return PointInPolygonResult.IsOn;
+          i++;
+          continue;
+        }
+
+        if (pt.X < curr.X && pt.X < prev.X)
+        {
+          // we're only interested in edges crossing on the left
+        }
+        else if (pt.X > prev.X && pt.X > curr.X)
+        {
+          val = 1 - val; // toggle val
+        }
+        else
+        {
+          double d = CrossProduct(prev, curr, pt);
+          if (d == 0) return PointInPolygonResult.IsOn;
+          if ((d < 0) == isAbove) val = 1 - val;
+        }
+        isAbove = !isAbove;
+        i++;
+      }
+      if (val == 0)
+        return PointInPolygonResult.IsOutside;
+      return PointInPolygonResult.IsInside;
     }
 
   } // InternalClipper
