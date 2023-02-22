@@ -416,12 +416,13 @@ namespace Clipper2Lib.Native
 
     public class PathPool<T, T2> where T : List<T2>, new()
     {
-        private Stack<T> mStack = new Stack<T>();
+        private int mCapacity;
+        private Stack<T> mStack;
 
-        public int Count => mStack.Count;
-
-        public PathPool()
+        public PathPool(int capacity = 0)
         {
+            mCapacity = capacity;
+            mStack = new Stack<T>(mCapacity);
         }
 
         public T Get(int capacity = 0)
@@ -439,10 +440,10 @@ namespace Clipper2Lib.Native
 
         public void Recycle(T obj)
         {
-#if UNITY_EDITOR && CHECK_RECYCLE
+#if CHECK_POOL_RECYCLE
 			if (mStack.Contains(obj))
 			{
-				UnityEngine.Debug.LogError($"{this} Recycle repeat!");
+				throw new Exception($"{this} Recycle repeat!");
 			}
 			else
 #endif
@@ -459,7 +460,108 @@ namespace Clipper2Lib.Native
 
         public void Release()
         {
-            mStack = new Stack<T>();
+            mStack = new Stack<T>(mCapacity);
+        }
+    }
+
+    public class BetterPathPool<T, T2> where T : List<T2>, new()
+    {
+        private int mCapacity;
+        private List<T> mList;
+
+        public BetterPathPool(int capacity = 0)
+        {
+            mCapacity = capacity;
+            mList = new List<T>(mCapacity);
+        }
+
+        public T Get(int capacity = 0)
+        {
+            T result;
+            if (mList.Count > 0)
+            {
+                int last = mList.Count - 1;
+                if (capacity > 0)
+                {
+                    int best = int.MaxValue;
+                    int index = last;
+                    for (int i = index; i >= 0; --i)
+                    {
+                        var list = mList[i];
+                        int diff = list.Capacity - capacity;
+                        if (diff == 0)
+                        {
+                            index = i;
+                            break;
+                        }
+
+                        if (diff < 0)
+                        {
+                            diff = diff * -2;
+                        }
+
+                        int t = diff / capacity;
+                        if (t > 1)
+                        {
+                            diff = diff * t;
+                        }
+
+                        if (best > diff)
+                        {
+                            best = diff;
+                            index = i;
+                        }
+                    }
+
+                    result = mList[index];
+                    if (index != last)
+                    {
+                        mList[index] = mList[last];
+                    }
+                    mList.RemoveAt(last);
+                }
+                else
+                {
+                    result = mList[last];
+                    mList.RemoveAt(last);
+                }
+            }
+            else
+            {
+                result = new T();
+            }
+
+            if (result.Capacity < capacity)
+                result.Capacity = capacity;
+            return result;
+        }
+
+        public void Recycle(T obj)
+        {
+#if CHECK_POOL_RECYCLE
+			if (mList.Contains(obj))
+			{
+				throw new Exception($"{this} Recycle repeat!");
+			}
+			else
+#endif
+            {
+                obj.Clear();
+                mList.Add(obj);
+            }
+        }
+
+        public void Clear()
+        {
+            mList.Clear();
+        }
+
+        public void Release()
+        {
+            if (mList.Capacity > mCapacity)
+            {
+                mList = new List<T>(mCapacity);
+            }
         }
     }
 }
