@@ -4,10 +4,16 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 VisualStudioVersion = 17.4.33205.214
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ClipperUnity", "ClipperUnity\ClipperUnity.csproj", "{3480DB31-5497-451E-8F48-9C5E4B733657}"
+	ProjectSection(ProjectDependencies) = postProject
+		{9C7893B0-0F54-474A-83A6-D21F1657921F} = {9C7893B0-0F54-474A-83A6-D21F1657921F}
+	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ClipperExport", "ClipperExport\ClipperExport.vcxproj", "{9C7893B0-0F54-474A-83A6-D21F1657921F}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TestClipper", "TestClipper\TestClipper.csproj", "{93A3FDB5-60F0-433C-B402-6AA72459D26B}"
+	ProjectSection(ProjectDependencies) = postProject
+		{9C7893B0-0F54-474A-83A6-D21F1657921F} = {9C7893B0-0F54-474A-83A6-D21F1657921F}
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

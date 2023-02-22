@@ -7,7 +7,7 @@
 * License   :  http://www.boost.org/LICENSE_1_0.txt                            *
 *******************************************************************************/
 
-#nullable enable
+//#nullable enable
 using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
@@ -153,7 +153,7 @@ namespace Clipper2Lib
     }
 
 #endif
-    public override bool Equals(object? obj)
+    public override bool Equals(object obj)
     {
       if (obj != null && obj is Point64 p)
         return this == p;
@@ -273,7 +273,7 @@ namespace Clipper2Lib
         !InternalClipper.IsAlmostZero(lhs.y - rhs.y);
     }
 
-    public override bool Equals(object? obj)
+    public override bool Equals(object obj)
     {
       if (obj != null && obj is PointD p)
         return this == p;
