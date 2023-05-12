@@ -1,5 +1,7 @@
 ﻿using Clipper2Lib;
 using Clipper2Lib.Native;
+using System;
+using System.Collections.Generic;
 using System.Drawing;
 using System.Runtime.InteropServices;
 
