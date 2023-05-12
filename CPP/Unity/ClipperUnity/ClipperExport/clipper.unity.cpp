@@ -7,6 +7,7 @@
 * License   :                                                                  *
 *******************************************************************************/
 #include "clipper.unity.h"
+#include "polypartition.h"
 
 namespace Clipper2Lib::Unity {
 
@@ -200,4 +201,71 @@ namespace Clipper2Lib::Unity {
     }
 #pragma endregion
 
+#pragma region Triangulate
+    double Area(const PointD* begin, const PointD* end)
+    {
+        double A = 0.0;
+        for (auto cur = begin, pre = end - 1; cur < end; cur++)
+        {
+            A += (pre->x * cur->y) - (cur->x * pre->y);
+            pre = cur;
+        }
+        return A * 0.5;
+    }
+
+    bool IsClockwise(const PointD* begin, const PointD* end)
+    {
+        double area = Area(begin, end);
+        return area > 0;
+    }
+
+    CPathsD Triangulate_EC(const CPathsD& data)
+    {
+        TPPLPolyList inpolys, triangles;
+
+        for (int64_t i = 0, offset = 0; i < data.pathNum; ++i) {
+            auto size = data.sizePtr[i];
+            auto dptr = data.dataPtr + offset;
+            TPPLPoly& poly = inpolys.emplace_back();
+            poly.Init((long)size);
+            poly.SetHole(!IsClockwise(dptr, dptr + size));
+            for (int j = 0; j < size; ++j) {
+                poly[j].x = dptr->x;
+                poly[j].y = dptr->y;
+                dptr++;
+            }
+            offset += size;
+        }
+
+        TPPLPartition partition;
+        partition.Triangulate_EC(&inpolys, &triangles);
+
+        CPathsD output;
+        output.pathNum = triangles.size();
+        output.sizePtr = new int64_t[output.pathNum];
+
+        int64_t total = 0;
+        int64_t index = 0;
+        for (auto it = triangles.begin(); it != triangles.end(); ++it) {
+            auto size = it->GetNumPoints();
+            output.sizePtr[index++] = size;
+            total += size;
+        }
+
+        output.dataPtr = new PointD[total];
+        auto dataPtr = output.dataPtr;
+        index = 0;
+        for (auto it = triangles.begin(); it != triangles.end(); ++it) {
+            auto points = it->GetPoints();
+            auto size = output.sizePtr[index++];
+            for (int j = 0; j < size; ++j) {
+                dataPtr->x = points->x;
+                dataPtr->y = points->y;
+                dataPtr++;
+                points++;
+            }
+        }
+        return output;
+    }
+#pragma endregion
 }

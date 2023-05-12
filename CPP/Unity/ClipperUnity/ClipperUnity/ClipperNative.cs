@@ -108,6 +108,11 @@ namespace Clipper2Lib.Native
         static extern void ReleaseCPathsD(ref CPathsD data);
         #endregion
 
+        #region DllImport Triangulate
+        [DllImport(DLL_NAME)]
+        static extern CPathsD Triangulate_EC(ref CPathsD data);
+        #endregion
+
         #region Paths64
         public static void Intersect(Paths64 subjects, Paths64 clips, FillRule fillrule, ref Paths64 result)
         {
@@ -197,6 +202,16 @@ namespace Clipper2Lib.Native
             CPathsD data = Xor_D(ref mSubjectsD.data, ref mClipsD.data, (int)fillrule, precision);
             ToPathsD(data, ref result);
             ReleaseCPathsD(ref data);
+        }
+        #endregion
+
+        #region Triangulate
+        public static void Triangulate_EC(PathsD paths, ref PathsD result)
+        {
+            UpdatePathsData(ref mSubjectsD, paths);
+            CPathsD output = Triangulate_EC(ref mSubjectsD.data);
+            ToPathsD(output, ref result);
+            ReleaseCPathsD(ref output);
         }
         #endregion
 

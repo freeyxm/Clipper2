@@ -39,4 +39,6 @@ namespace Clipper2Lib::Unity {
     DllExport CPathsD Difference_D(const CPathsD& subjects, const CPathsD& clips, int fillrule, int precision = 2);
     DllExport CPathsD Xor_D(const CPathsD& subjects, const CPathsD& clips, int fillrule, int precision = 2);
     DllExport void ReleaseCPathsD(CPathsD& data);
+
+    DllExport CPathsD Triangulate_EC(const CPathsD& data);
 }
