@@ -62,11 +62,9 @@ namespace Clipper2Lib.Native
 
         private static Paths64Data mSubjects64 = new Paths64Data();
         private static Paths64Data mClips64 = new Paths64Data();
-        private static PathPool<Path64, Clipper2Lib.Point64> mPath64Pool = new PathPool<Path64, Clipper2Lib.Point64>();
 
         private static PathsDData mSubjectsD = new PathsDData();
         private static PathsDData mClipsD = new PathsDData();
-        private static PathPool<PathD, Clipper2Lib.PointD> mPathDPool = new PathPool<PathD, Clipper2Lib.PointD>();
 
         #region DllImport CPaths64
         [DllImport(DLL_NAME)]
@@ -215,33 +213,13 @@ namespace Clipper2Lib.Native
         }
         #endregion
 
-        public static void RecyclePaths(Paths64 paths)
-        {
-            for (int i = 0; i < paths.Count; ++i)
-            {
-                mPath64Pool.Recycle(paths[i]);
-            }
-            paths.Clear();
-        }
-
-        public static void RecyclePaths(PathsD paths)
-        {
-            for (int i = 0; i < paths.Count; ++i)
-            {
-                mPathDPool.Recycle(paths[i]);
-            }
-            paths.Clear();
-        }
-
         public static void Release()
         {
             ReleasePathsData(mSubjects64);
             ReleasePathsData(mClips64);
-            mPath64Pool.Release();
-
             ReleasePathsData(mSubjectsD);
             ReleasePathsData(mClipsD);
-            mPathDPool.Release();
+            ClipperPathPool.Release();
         }
 
         #region inner
@@ -391,7 +369,7 @@ namespace Clipper2Lib.Native
                 for (int i = 0; i < pathsData.pathNum; ++i)
                 {
                     long size = *sizePtr++;
-                    var path = mPath64Pool.Get((int)size);
+                    var path = ClipperPathPool.mPath64Pool.Get((int)size);
                     for (int j = 0; j < size; ++j)
                     {
                         path.Add(new Clipper2Lib.Point64(dataPtr->x, dataPtr->y));
@@ -416,7 +394,7 @@ namespace Clipper2Lib.Native
                 for (int i = 0; i < pathsData.pathNum; ++i)
                 {
                     long size = *sizePtr++;
-                    var path = mPathDPool.Get((int)size);
+                    var path = ClipperPathPool.mPathDPool.Get((int)size);
                     for (int j = 0; j < size; ++j)
                     {
                         path.Add(new Clipper2Lib.PointD(dataPtr->x, dataPtr->y));
@@ -427,6 +405,44 @@ namespace Clipper2Lib.Native
             }
         }
         #endregion
+    }
+
+    public static class ClipperPathPool
+    {
+        public static readonly PathPool<Paths64, Path64> mPaths64Pool = new PathPool<Paths64, Path64>();
+        public static readonly PathPool<PathsD, PathD> mPathsDPool = new PathPool<PathsD, PathD>();
+        public static readonly PathPool<Path64, Clipper2Lib.Point64> mPath64Pool = new PathPool<Path64, Clipper2Lib.Point64>();
+        public static readonly PathPool<PathD, Clipper2Lib.PointD> mPathDPool = new PathPool<PathD, Clipper2Lib.PointD>();
+
+        public static void RecyclePaths(ref Paths64 paths)
+        {
+            for (int i = 0; i < paths.Count; ++i)
+            {
+                mPath64Pool.Recycle(paths[i]);
+            }
+            paths.Clear();
+            mPaths64Pool.Recycle(paths);
+            paths = null;
+        }
+
+        public static void RecyclePaths(ref PathsD paths)
+        {
+            for (int i = 0; i < paths.Count; ++i)
+            {
+                mPathDPool.Recycle(paths[i]);
+            }
+            paths.Clear();
+            mPathsDPool.Recycle(paths);
+            paths = null;
+        }
+
+        public static void Release()
+        {
+            mPaths64Pool.Release();
+            mPathsDPool.Release();
+            mPath64Pool.Release();
+            mPathDPool.Release();
+        }
     }
 
     public class PathPool<T, T2> where T : List<T2>, new()
