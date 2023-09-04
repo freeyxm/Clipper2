@@ -416,24 +416,30 @@ namespace Clipper2Lib.Native
 
         public static void RecyclePaths(ref Paths64 paths)
         {
-            for (int i = 0; i < paths.Count; ++i)
+            if (paths != null)
             {
-                mPath64Pool.Recycle(paths[i]);
+                for (int i = 0; i < paths.Count; ++i)
+                {
+                    mPath64Pool.Recycle(paths[i]);
+                }
+                paths.Clear();
+                mPaths64Pool.Recycle(paths);
+                paths = null;
             }
-            paths.Clear();
-            mPaths64Pool.Recycle(paths);
-            paths = null;
         }
 
         public static void RecyclePaths(ref PathsD paths)
         {
-            for (int i = 0; i < paths.Count; ++i)
+            if (paths != null)
             {
-                mPathDPool.Recycle(paths[i]);
+                for (int i = 0; i < paths.Count; ++i)
+                {
+                    mPathDPool.Recycle(paths[i]);
+                }
+                paths.Clear();
+                mPathsDPool.Recycle(paths);
+                paths = null;
             }
-            paths.Clear();
-            mPathsDPool.Recycle(paths);
-            paths = null;
         }
 
         public static void Release()
@@ -449,6 +455,12 @@ namespace Clipper2Lib.Native
     {
         private int mCapacity;
         private Stack<T> mStack;
+#if DEBUG
+        private int mAllocCount;
+        public int AllocCount => mAllocCount;
+#endif
+        public int Count => mStack.Count;
+        public int Capacity => mCapacity;
 
         public PathPool(int capacity = 0)
         {
@@ -460,9 +472,16 @@ namespace Clipper2Lib.Native
         {
             T result;
             if (mStack.Count > 0)
+            {
                 result = mStack.Pop();
+            }
             else
+            {
                 result = new T();
+#if DEBUG
+                ++mAllocCount;
+#endif
+            }
 
             if (result.Capacity < capacity)
                 result.Capacity = capacity;
@@ -471,12 +490,12 @@ namespace Clipper2Lib.Native
 
         public void Recycle(T obj)
         {
-#if CHECK_POOL_RECYCLE
-			if (mStack.Contains(obj))
-			{
-				throw new Exception($"{this} Recycle repeat!");
-			}
-			else
+#if DEBUG
+            if (mStack.Contains(obj))
+            {
+                throw new Exception($"{this} Recycle repeat!");
+            }
+            else
 #endif
             {
                 obj.Clear();
@@ -487,11 +506,17 @@ namespace Clipper2Lib.Native
         public void Clear()
         {
             mStack.Clear();
+#if DEBUG
+            mAllocCount = 0;
+#endif
         }
 
         public void Release()
         {
             mStack = new Stack<T>(mCapacity);
+#if DEBUG
+            mAllocCount = 0;
+#endif
         }
     }
 
@@ -499,6 +524,12 @@ namespace Clipper2Lib.Native
     {
         private int mCapacity;
         private List<T> mList;
+#if DEBUG
+        private int mAllocCount;
+        public int AllocCount => mAllocCount;
+#endif
+        public int Count => mList.Count;
+        public int Capacity => mCapacity;
 
         public BetterPathPool(int capacity = 0)
         {
@@ -560,6 +591,9 @@ namespace Clipper2Lib.Native
             else
             {
                 result = new T();
+#if DEBUG
+                ++mAllocCount;
+#endif
             }
 
             if (result.Capacity < capacity)
@@ -569,12 +603,12 @@ namespace Clipper2Lib.Native
 
         public void Recycle(T obj)
         {
-#if CHECK_POOL_RECYCLE
-			if (mList.Contains(obj))
-			{
-				throw new Exception($"{this} Recycle repeat!");
-			}
-			else
+#if DEBUG
+            if (mList.Contains(obj))
+            {
+                throw new Exception($"{this} Recycle repeat!");
+            }
+            else
 #endif
             {
                 obj.Clear();
@@ -585,14 +619,17 @@ namespace Clipper2Lib.Native
         public void Clear()
         {
             mList.Clear();
+#if DEBUG
+            mAllocCount = 0;
+#endif
         }
 
         public void Release()
         {
-            if (mList.Capacity > mCapacity)
-            {
-                mList = new List<T>(mCapacity);
-            }
+            mList = new List<T>(mCapacity);
+#if DEBUG
+            mAllocCount = 0;
+#endif
         }
     }
 }
