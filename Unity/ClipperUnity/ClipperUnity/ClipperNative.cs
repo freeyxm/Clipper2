@@ -453,8 +453,8 @@ namespace Clipper2Lib.Native
 
     public class PathPool<T, T2> where T : List<T2>, new()
     {
-        private int mCapacity;
         private Stack<T> mStack;
+        private int mCapacity;
 #if DEBUG
         private int mAllocCount;
         public int AllocCount => mAllocCount;
@@ -522,8 +522,8 @@ namespace Clipper2Lib.Native
 
     public class BetterPathPool<T, T2> where T : List<T2>, new()
     {
-        private int mCapacity;
         private List<T> mList;
+        private int mCapacity;
 #if DEBUG
         private int mAllocCount;
         public int AllocCount => mAllocCount;
