@@ -72,14 +72,14 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>..\..\..\Clipper2Lib\include</IncludePath>
+    <IncludePath>..\..\..\CPP\Clipper2Lib\include</IncludePath>
     <OutDir>$(ProjectDir)bin\$(Configuration)\$(Platform)</OutDir>
     <IntDir>$(ProjectDir)obj\$(Configuration)\$(Platform)</IntDir>
     <TargetName>Clipper2</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
-    <IncludePath>..\..\..\Clipper2Lib\include</IncludePath>
+    <IncludePath>..\..\..\CPP\Clipper2Lib\include</IncludePath>
     <OutDir>$(ProjectDir)bin\$(Configuration)\$(Platform)</OutDir>
     <IntDir>$(ProjectDir)obj\$(Configuration)\$(Platform)</IntDir>
     <TargetName>Clipper2</TargetName>
@@ -88,14 +88,14 @@
     <LinkIncremental>true</LinkIncremental>
     <OutDir>$(ProjectDir)bin\$(Configuration)\$(Platform)</OutDir>
     <IntDir>$(ProjectDir)obj\$(Configuration)\$(Platform)</IntDir>
-    <IncludePath>..\..\..\Clipper2Lib\include</IncludePath>
+    <IncludePath>..\..\..\CPP\Clipper2Lib\include</IncludePath>
     <TargetName>Clipper2</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
     <OutDir>$(ProjectDir)bin\$(Configuration)\$(Platform)</OutDir>
     <IntDir>$(ProjectDir)obj\$(Configuration)\$(Platform)</IntDir>
-    <IncludePath>..\..\..\Clipper2Lib\include</IncludePath>
+    <IncludePath>..\..\..\CPP\Clipper2Lib\include</IncludePath>
     <TargetName>Clipper2</TargetName>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
@@ -171,20 +171,20 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\..\Clipper2Lib\include\clipper2\clipper.core.h" />
-    <ClInclude Include="..\..\..\Clipper2Lib\include\clipper2\clipper.engine.h" />
-    <ClInclude Include="..\..\..\Clipper2Lib\include\clipper2\clipper.h" />
-    <ClInclude Include="..\..\..\Clipper2Lib\include\clipper2\clipper.offset.h" />
-    <ClInclude Include="..\..\..\Clipper2Lib\include\clipper2\clipper.rectclip.h" />
+    <ClInclude Include="..\..\..\CPP\Clipper2Lib\include\clipper2\clipper.core.h" />
+    <ClInclude Include="..\..\..\CPP\Clipper2Lib\include\clipper2\clipper.engine.h" />
+    <ClInclude Include="..\..\..\CPP\Clipper2Lib\include\clipper2\clipper.h" />
+    <ClInclude Include="..\..\..\CPP\Clipper2Lib\include\clipper2\clipper.offset.h" />
+    <ClInclude Include="..\..\..\CPP\Clipper2Lib\include\clipper2\clipper.rectclip.h" />
     <ClInclude Include="clipper.unity.h" />
     <ClInclude Include="framework.h" />
     <ClInclude Include="pch.h" />
     <ClInclude Include="polypartition.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\..\Clipper2Lib\src\clipper.engine.cpp" />
-    <ClCompile Include="..\..\..\Clipper2Lib\src\clipper.offset.cpp" />
-    <ClCompile Include="..\..\..\Clipper2Lib\src\clipper.rectclip.cpp" />
+    <ClCompile Include="..\..\..\CPP\Clipper2Lib\src\clipper.engine.cpp" />
+    <ClCompile Include="..\..\..\CPP\Clipper2Lib\src\clipper.offset.cpp" />
+    <ClCompile Include="..\..\..\CPP\Clipper2Lib\src\clipper.rectclip.cpp" />
     <ClCompile Include="clipper.unity.cpp" />
     <ClCompile Include="dllmain.cpp" />
     <ClCompile Include="pch.cpp">
