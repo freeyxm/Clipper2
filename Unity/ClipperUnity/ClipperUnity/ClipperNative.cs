@@ -559,13 +559,7 @@ namespace Clipper2Lib.Native
 
                         if (diff < 0)
                         {
-                            diff = diff * -2;
-                        }
-
-                        int t = diff / capacity;
-                        if (t > 1)
-                        {
-                            diff = diff * t;
+                            diff = Math.Max(list.Capacity, -diff);
                         }
 
                         if (best > diff)
