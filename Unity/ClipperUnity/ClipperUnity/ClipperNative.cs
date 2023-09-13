@@ -409,10 +409,18 @@ namespace Clipper2Lib.Native
 
     public static class ClipperPathPool
     {
-        public static readonly PathPool<Paths64, Path64> mPaths64Pool = new PathPool<Paths64, Path64>();
-        public static readonly PathPool<PathsD, PathD> mPathsDPool = new PathPool<PathsD, PathD>();
-        public static readonly PathPool<Path64, Clipper2Lib.Point64> mPath64Pool = new PathPool<Path64, Clipper2Lib.Point64>();
-        public static readonly PathPool<PathD, Clipper2Lib.PointD> mPathDPool = new PathPool<PathD, Clipper2Lib.PointD>();
+        public static readonly IPathPool<Paths64, Path64> mPaths64Pool;
+        public static readonly IPathPool<PathsD, PathD> mPathsDPool;
+        public static readonly IPathPool<Path64, Clipper2Lib.Point64> mPath64Pool;
+        public static readonly IPathPool<PathD, Clipper2Lib.PointD> mPathDPool;
+
+        static ClipperPathPool()
+        {
+            mPaths64Pool = new PathPool<Paths64, Path64>();
+            mPathsDPool = new PathPool<PathsD, PathD>();
+            mPath64Pool = new PathPool<Path64, Clipper2Lib.Point64>();
+            mPathDPool = new PathPool<PathD, Clipper2Lib.PointD>();
+        }
 
         public static void RecyclePaths(ref Paths64 paths)
         {
@@ -451,7 +459,20 @@ namespace Clipper2Lib.Native
         }
     }
 
-    public class PathPool<T, T2> where T : List<T2>, new()
+    #region PathPool
+    public interface IPathPool<T, T2> where T : List<T2>, new()
+    {
+#if DEBUG
+        int AllocCount { get; }
+#endif
+        int Count { get; }
+        T Get(int capacity = 0);
+        void Recycle(T obj);
+        void Clear();
+        void Release();
+    }
+
+    public class PathPool<T, T2> : IPathPool<T, T2> where T : List<T2>, new()
     {
         private Stack<T> mStack;
         private int mCapacity;
@@ -520,66 +541,67 @@ namespace Clipper2Lib.Native
         }
     }
 
-    public class BetterPathPool<T, T2> where T : List<T2>, new()
+    public class BetterPathPool<T, T2> : IPathPool<T, T2> where T : List<T2>, new()
     {
-        private List<T> mList;
-        private int mCapacity;
+        private MultiValueDictionary<int, T> mDict;
+        private List<int> mKeyList;
 #if DEBUG
         private int mAllocCount;
         public int AllocCount => mAllocCount;
 #endif
-        public int Count => mList.Count;
-        public int Capacity => mCapacity;
+        public int Count => mDict.Count;
 
-        public BetterPathPool(int capacity = 0)
+        public BetterPathPool()
         {
-            mCapacity = capacity;
-            mList = new List<T>(mCapacity);
+            mDict = new MultiValueDictionary<int, T>();
+            mKeyList = new List<int>();
         }
 
         public T Get(int capacity = 0)
         {
             T result;
-            if (mList.Count > 0)
+            if (mDict.Count > 0)
             {
-                int last = mList.Count - 1;
-                if (capacity > 0)
+                T value;
+                if (mDict.TryPopValue(capacity, out value))
+                    return value;
+
+                mKeyList.Clear();
+                mKeyList.AddRange(mDict.Keys);
+                mKeyList.Sort();
+
+                int bestKey;
+                if (capacity == 0)
                 {
-                    int best = int.MaxValue;
-                    int index = last;
-                    for (int i = index; i >= 0; --i)
-                    {
-                        var list = mList[i];
-                        int diff = list.Capacity - capacity;
-                        if (diff == 0)
-                        {
-                            index = i;
-                            break;
-                        }
-
-                        if (diff < 0)
-                        {
-                            diff = Math.Max(list.Capacity, -diff);
-                        }
-
-                        if (best > diff)
-                        {
-                            best = diff;
-                            index = i;
-                        }
-                    }
-
-                    result = mList[index];
-                    if (index != last)
-                    {
-                        mList[index] = mList[last];
-                    }
-                    mList.RemoveAt(last);
+                    bestKey = mKeyList[0];
                 }
                 else
                 {
-                    result = mList[last];
-                    mList.RemoveAt(last);
+                    int left = 0;
+                    int right = mKeyList.Count - 1;
+                    int mid = (left + right) / 2;
+                    while (left < right)
+                    {
+                        int key = mKeyList[mid];
+                        if (key < capacity)
+                            left = mid + 1;
+                        else
+                            right = mid;
+                        mid = (left + right) / 2;
+                    }
+                    bestKey = mKeyList[mid];
+                }
+
+                if (mDict.TryPopValue(bestKey, out value))
+                {
+                    result = value;
+                }
+                else
+                {
+                    result = new T();
+#if DEBUG
+                    ++mAllocCount;
+#endif
                 }
             }
             else
@@ -598,7 +620,7 @@ namespace Clipper2Lib.Native
         public void Recycle(T obj)
         {
 #if DEBUG
-            if (mList.Contains(obj))
+            if (mDict.ContainsValue(obj))
             {
                 throw new Exception($"{this} Recycle repeat!");
             }
@@ -606,13 +628,14 @@ namespace Clipper2Lib.Native
 #endif
             {
                 obj.Clear();
-                mList.Add(obj);
+                mDict.Add(obj.Capacity, obj);
             }
         }
 
         public void Clear()
         {
-            mList.Clear();
+            mDict.Clear();
+            mKeyList.Clear();
 #if DEBUG
             mAllocCount = 0;
 #endif
@@ -620,10 +643,12 @@ namespace Clipper2Lib.Native
 
         public void Release()
         {
-            mList = new List<T>(mCapacity);
+            mDict = new MultiValueDictionary<int, T>();
+            mKeyList = new List<int>();
 #if DEBUG
             mAllocCount = 0;
 #endif
         }
     }
+    #endregion
 }
