@@ -4,7 +4,7 @@ using System.Collections.Generic;
 
 namespace Clipper2Lib
 {
-    public class MultiDictionary<TKey, TValue> : IDictionary<TKey, TValue>
+    public class MultiValueDictionary<TKey, TValue> : IDictionary<TKey, TValue>
     {
         private readonly Dictionary<TKey, object> mDict = new Dictionary<TKey, object>();
         private readonly Queue<List<TValue>> mCache = new Queue<List<TValue>>();
@@ -137,7 +137,7 @@ namespace Clipper2Lib
                     }
                     return index >= 0;
                 }
-                else
+                else if (_value.Equals(item.Value))
                 {
                     mDict.Remove(item.Key);
                     mCount--;
@@ -230,9 +230,9 @@ namespace Clipper2Lib
 
         private class ValueCollection : ICollection<TValue>
         {
-            private MultiDictionary<TKey, TValue> mDict;
+            private MultiValueDictionary<TKey, TValue> mDict;
 
-            public ValueCollection(MultiDictionary<TKey, TValue> dictionay)
+            public ValueCollection(MultiValueDictionary<TKey, TValue> dictionay)
             {
                 mDict = dictionay;
             }
