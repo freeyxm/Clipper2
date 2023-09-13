@@ -1,4 +1,12 @@
-﻿using System;
+﻿/*******************************************************************************
+* Author    :  freeyxm                                                         *
+* Date      :  2023.09.13                                                      *
+* Website   :  https://github.com/freeyxm                                      *
+* Copyright :                                                                  *
+* Purpose   :  An multi-value dictionary implemention.                         *
+* License   :                                                                  *
+*******************************************************************************/
+using System;
 using System.Collections;
 using System.Collections.Generic;
 
@@ -6,8 +14,9 @@ namespace Clipper2Lib
 {
     public class MultiValueDictionary<TKey, TValue> : IDictionary<TKey, TValue>
     {
-        private readonly Dictionary<TKey, object> mDict = new Dictionary<TKey, object>();
+        private readonly Dictionary<TKey, List<TValue>> mDict = new Dictionary<TKey, List<TValue>>();
         private readonly Queue<List<TValue>> mCache = new Queue<List<TValue>>();
+        private ValueCollection mValues;
         private int mCount = 0;
 
         public TValue this[TKey key]
@@ -24,7 +33,15 @@ namespace Clipper2Lib
 
         public ICollection<TKey> Keys => mDict.Keys;
 
-        public ICollection<TValue> Values => new ValueCollection(this);
+        public ICollection<TValue> Values
+        {
+            get
+            {
+                if (mValues == null)
+                    mValues = new ValueCollection(this);
+                return mValues;
+            }
+        }
 
         public int Count => mCount;
 
@@ -32,30 +49,19 @@ namespace Clipper2Lib
 
         public void Add(TKey key, TValue value)
         {
-            if (mDict.TryGetValue(key, out var _value))
+            if (mDict.TryGetValue(key, out var list))
             {
-                if (_value is List<TValue>)
-                {
-                    var list = _value as List<TValue>;
-                    list.Add(value);
-                    mCount++;
-                }
-                else
-                {
-                    List<TValue> list;
-                    if (mCache.Count > 0)
-                        list = mCache.Dequeue();
-                    else
-                        list = new List<TValue>(2);
-                    list.Add((TValue)_value);
-                    list.Add(value);
-                    mDict[key] = list;
-                    mCount++;
-                }
+                list.Add(value);
+                mCount++;
             }
             else
             {
-                mDict.Add(key, value);
+                if (mCache.Count > 0)
+                    list = mCache.Dequeue();
+                else
+                    list = new List<TValue>(1);
+                list.Add(value);
+                mDict.Add(key, list);
                 mCount++;
             }
         }
@@ -77,105 +83,92 @@ namespace Clipper2Lib
             return mDict.ContainsKey(key);
         }
 
+        public bool ContainsValue(TValue value)
+        {
+            for (var e = mDict.GetEnumerator(); e.MoveNext();)
+            {
+                if (e.Current.Value.Contains(value))
+                    return true;
+            }
+            return false;
+        }
+
         public bool Contains(KeyValuePair<TKey, TValue> item)
         {
-            if (mDict.TryGetValue(item.Key, out var _value))
+            if (mDict.TryGetValue(item.Key, out var list))
             {
-                if (_value is List<TValue>)
-                {
-                    var list = _value as List<TValue>;
-                    return list.Contains(item.Value);
-                }
-                else
-                {
-                    return _value.Equals(item.Value);
-                }
+                return list.Contains(item.Value);
             }
             return false;
         }
 
         public bool Remove(TKey key)
         {
-            if (mDict.TryGetValue(key, out var _value))
+            if (mDict.TryGetValue(key, out var list))
             {
-                if (_value is List<TValue>)
-                {
-                    var list = _value as List<TValue>;
-                    mCount -= list.Count;
-                    list.Clear();
-                    mDict.Remove(key);
-                    mCache.Enqueue(list);
-                    return true;
-                }
-                else
-                {
-                    mDict.Remove(key);
-                    mCount--;
-                    return true;
-                }
+                mCount -= list.Count;
+                list.Clear();
+                mDict.Remove(key);
+                mCache.Enqueue(list);
+                return true;
             }
             return false;
         }
 
         public bool Remove(KeyValuePair<TKey, TValue> item)
         {
-            if (mDict.TryGetValue(item.Key, out var _value))
+            if (mDict.TryGetValue(item.Key, out var list))
             {
-                if (_value is List<TValue>)
+                var index = list.LastIndexOf(item.Value);
+                var exist = index >= 0;
+                if (exist)
                 {
-                    var list = _value as List<TValue>;
-                    var index = list.LastIndexOf(item.Value);
-                    if (index >= 0)
-                    {
-                        list.RemoveAt(index);
-                        mCount--;
-                    }
-                    if (list.Count == 0)
-                    {
-                        mDict.Remove(item.Key);
-                        mCache.Enqueue(list);
-                    }
-                    return index >= 0;
+                    list.RemoveAt(index);
+                    mCount--;
                 }
-                else if (_value.Equals(item.Value))
+                if (list.Count == 0)
                 {
                     mDict.Remove(item.Key);
-                    mCount--;
-                    return true;
+                    mCache.Enqueue(list);
                 }
+                return exist;
             }
             return false;
         }
 
         public bool TryGetValue(TKey key, out TValue value)
         {
-            if (mDict.TryGetValue(key, out var _value))
+            if (mDict.TryGetValue(key, out var list))
             {
-                if (_value is List<TValue>)
+                if (list.Count > 0)
                 {
-                    var list = _value as List<TValue>;
-                    if (list.Count > 0)
-                    {
-                        value = list[list.Count - 1];
-                        return true;
-                    }
-                    else
-                    {
-                        value = default(TValue);
-                        return false;
-                    }
-                }
-                else
-                {
-                    value = (TValue)_value;
+                    value = list[list.Count - 1];
                     return true;
                 }
             }
-            else
+            value = default(TValue);
+            return false;
+        }
+
+        public bool TryPopValue(TKey key, out TValue value)
+        {
+            if (mDict.TryGetValue(key, out var list))
             {
-                value = default(TValue);
-                return false;
+                int index = list.Count - 1;
+                {
+                    value = list[index];
+                    list.RemoveAt(index);
+                    mCount--;
+                }
+                if (list.Count == 0)
+                {
+                    mDict.Remove(key);
+                    mCache.Enqueue(list);
+                }
+                return true;
             }
+            value = default(TValue);
+            return false;
         }
 
         public void CopyTo(KeyValuePair<TKey, TValue>[] array, int index)
@@ -191,18 +184,10 @@ namespace Clipper2Lib
             for (var e = mDict.GetEnumerator(); e.MoveNext();)
             {
                 var key = e.Current.Key;
-                var value = e.Current.Value;
-                if (value is List<TValue>)
+                var list = e.Current.Value;
+                for (int i = 0; i < list.Count; i++)
                 {
-                    var list = (List<TValue>)value;
-                    for (int i = 0; i < list.Count; i++)
-                    {
-                        yield return new KeyValuePair<TKey, TValue>(key, list[i]);
-                    }
-                }
-                else
-                {
-                    yield return new KeyValuePair<TKey, TValue>(key, (TValue)value);
+                    yield return new KeyValuePair<TKey, TValue>(key, list[i]);
                 }
             }
         }
@@ -212,18 +197,10 @@ namespace Clipper2Lib
             for (var e = mDict.GetEnumerator(); e.MoveNext();)
             {
                 var key = e.Current.Key;
-                var value = e.Current.Value;
-                if (value is List<TValue>)
+                var list = e.Current.Value;
+                for (int i = 0; i < list.Count; i++)
                 {
-                    var list = (List<TValue>)value;
-                    for (int i = 0; i < list.Count; i++)
-                    {
-                        yield return new KeyValuePair<TKey, TValue>(key, list[i]);
-                    }
-                }
-                else
-                {
-                    yield return new KeyValuePair<TKey, TValue>(key, (TValue)value);
+                    yield return new KeyValuePair<TKey, TValue>(key, list[i]);
                 }
             }
         }
@@ -243,15 +220,17 @@ namespace Clipper2Lib
 
             public void Add(TValue item)
             {
+                throw new Exception("Collection is readonly");
             }
 
             public bool Remove(TValue item)
             {
-                return false;
+                throw new Exception("Collection is readonly");
             }
 
             public void Clear()
             {
+                throw new Exception("Collection is readonly");
             }
 
             public bool Contains(TValue item)
