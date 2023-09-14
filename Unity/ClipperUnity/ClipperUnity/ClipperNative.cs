@@ -571,7 +571,7 @@ namespace Clipper2Lib.Native
                 mKeyList.Sort();
 
                 int bestKey;
-                if (capacity == 0)
+                if (capacity <= mKeyList[0])
                 {
                     bestKey = mKeyList[0];
                 }

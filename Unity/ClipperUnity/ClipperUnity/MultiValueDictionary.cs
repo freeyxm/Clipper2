@@ -1,4 +1,4 @@
-﻿/*******************************************************************************
+/*******************************************************************************
 * Author    :  freeyxm                                                         *
 * Date      :  2023.09.13                                                      *
 * Website   :  https://github.com/freeyxm                                      *
@@ -205,7 +205,7 @@ namespace Clipper2Lib
             }
         }
 
-        private class ValueCollection : ICollection<TValue>
+        private class ValueCollection : ICollection<TValue>, ICollection
         {
             private MultiValueDictionary<TKey, TValue> mDict;
 
@@ -218,29 +218,28 @@ namespace Clipper2Lib
 
             public bool IsReadOnly => true;
 
+            public bool IsSynchronized => false;
+
+            public object SyncRoot => ((ICollection)mDict).SyncRoot;
+
             public void Add(TValue item)
             {
-                throw new Exception("Collection is readonly");
+                throw new NotSupportedException("NotSupported_ValueCollectionSet");
             }
 
             public bool Remove(TValue item)
             {
-                throw new Exception("Collection is readonly");
+                throw new NotSupportedException("NotSupported_ValueCollectionSet");
             }
 
             public void Clear()
             {
-                throw new Exception("Collection is readonly");
+                throw new NotSupportedException("NotSupported_ValueCollectionSet");
             }
 
             public bool Contains(TValue item)
             {
-                for (var e = GetEnumerator(); e.MoveNext();)
-                {
-                    if (e.Current.Equals(item))
-                        return true;
-                }
-                return false;
+                return mDict.ContainsValue(item);
             }
 
             public void CopyTo(TValue[] array, int index)
@@ -249,6 +248,11 @@ namespace Clipper2Lib
                 {
                     array[index++] = e.Current;
                 }
+            }
+
+            public void CopyTo(Array array, int index)
+            {
+                CopyTo(array as TValue[], index);
             }
 
             public IEnumerator<TValue> GetEnumerator()
